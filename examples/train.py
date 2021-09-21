@@ -176,9 +176,10 @@ def save_pred_if_needed(y_pred, dataset, epoch, config, is_best, force_save=Fals
 
 def save_model_if_needed(algorithm, dataset, epoch, config, is_best, best_val_metric):
     prefix = get_model_prefix(dataset, config)
+    # import pdb; pdb.set_trace()
     if config.save_step is not None and (epoch + 1) % config.save_step == 0:
-        save_model(algorithm, epoch, best_val_metric, prefix + f'epoch:{epoch}_model.pth')
+        save_model(algorithm, epoch, best_val_metric, prefix + f'epoch_{epoch}_model.pth')
     if config.save_last:
-        save_model(algorithm, epoch, best_val_metric, prefix + 'epoch:last_model.pth')
+        save_model(algorithm, epoch, best_val_metric, prefix + 'epoch_last_model.pth')
     if config.save_best and is_best:
-        save_model(algorithm, epoch, best_val_metric, prefix + 'epoch:best_model.pth')
+        save_model(algorithm, epoch, best_val_metric, prefix + 'epoch_best_model.pth')
