@@ -253,6 +253,7 @@ def train_augmix(net, train_loader, optimizer, scheduler, no_jsd):
 import torch
 from algorithms.single_model_algorithm import SingleModelAlgorithm
 from models.initializer import initialize_model
+from utils import move_to
 
 class AugMix(SingleModelAlgorithm):
     def __init__(self, config, d_out, grouper, loss,
@@ -269,7 +270,58 @@ class AugMix(SingleModelAlgorithm):
         )
 
     def objective(self, results):
-        return self.loss.compute(results['y_pred'], results['y_true'], return_dict=False)
+        logits_clean, logits_aug1, logits_aug2 = torch.split(
+            results['y_pred'], results['y_true'].size(0)) 
+        
+        loss = self.loss.compute(results['y_pred'], results['y_true'], return_dict=False)
+        
+        p_clean, p_aug1, p_aug2 = F.softmax(
+          logits_clean, dim=1), F.softmax(
+              logits_aug1, dim=1), F.softmax(
+                  logits_aug2, dim=1)
+
+        # Clamp mixture distribution to avoid exploding KL divergence
+        p_mixture = torch.clamp((p_clean + p_aug1 + p_aug2) / 3., 1e-7, 1).log()
+        loss += 12 * (F.kl_div(p_mixture, p_clean, reduction='batchmean') +
+                      F.kl_div(p_mixture, p_aug1, reduction='batchmean') +
+                      F.kl_div(p_mixture, p_aug2, reduction='batchmean')) / 3.
+        return loss
+    
+    def process_batch(self, batch):
+        """
+        A helper function for update() and evaluate() that processes the batch
+        Args:
+            - batch (tuple of Tensors): a batch of data yielded by data loaders
+        Output:
+            - results (dictionary): information about the batch
+                - y_true (Tensor)
+                - g (Tensor)
+                - metadata (Tensor)
+                - output (Tensor)
+                - y_true
+        """
+        x, y_true, metadata = batch
+        x = move_to(x, self.device)
+        y_true = move_to(y_true, self.device)
+        g = move_to(self.grouper.metadata_to_group(metadata), self.device)
+        
+        x_all = torch.cat(x, 0)
+
+        if self.model.needs_y:
+            if self.training:
+                outputs = self.model(x_all, y_true)
+            else:
+                outputs = self.model(x_all, None)
+        else:
+            outputs = self.model(x_all)
+            
+        results = {
+            'g': g,
+            'y_true': y_true,
+            'y_pred': outputs,
+            'metadata': metadata,
+            }
+        return results
                       
             
 

@@ -74,7 +74,7 @@ class WILDSDataset:
         if augmix == False:
             subset = WILDSSubset(self, split_idx, transform)
         else:
-            subset = AugMixWILDS(self, split_idx, transform)
+            subset = AugMixWILDSSubset(self, split_idx, transform)
         return subset
 
     def check_init(self):
@@ -487,7 +487,7 @@ class WILDSSubset(WILDSDataset):
         return self.dataset.eval(y_pred, y_true, metadata)
 
 
-class AugMixWILDS(WILDSSubset):
+class AugMixWILDSSubset(WILDSSubset):
     """Dataset wrapper to perform AugMix augmentation."""
 
     def __init__(self, dataset, indices, transform):
@@ -505,7 +505,7 @@ class AugMixWILDS(WILDSSubset):
       
       return im_tuple, y, metadata
 
-import augmentations 
+from wilds.datasets import augmentations 
 
 def aug(image, transform):
       """Perform AugMix augmentations and compute mixture.
