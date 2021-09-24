@@ -53,7 +53,7 @@ class WILDSDataset:
         """
         raise NotImplementedError
 
-    def get_subset(self, split, frac=1.0, transform=None):
+    def get_subset(self, split, frac=1.0, transform=None, augmix=False):
         """
         Args:
             - split (str): Split identifier, e.g., 'train', 'val', 'test'.
@@ -71,7 +71,10 @@ class WILDSDataset:
         if frac < 1.0:
             num_to_retain = int(np.round(float(len(split_idx)) * frac))
             split_idx = np.sort(np.random.permutation(split_idx)[:num_to_retain])
-        subset = WILDSSubset(self, split_idx, transform)
+        if augmix == False:
+            subset = WILDSSubset(self, split_idx, transform)
+        else:
+            subset = AugMixWILDS(self, split_idx, transform)
         return subset
 
     def check_init(self):
@@ -482,3 +485,55 @@ class WILDSSubset(WILDSDataset):
 
     def eval(self, y_pred, y_true, metadata):
         return self.dataset.eval(y_pred, y_true, metadata)
+
+
+class AugMixWILDS(WILDSSubset):
+    """Dataset wrapper to perform AugMix augmentation."""
+
+    def __init__(self, dataset, indices, transform):
+      self.dataset = dataset
+      self.indices = indices
+      self.transform = transform
+
+  
+    def __getitem__(self, idx):
+      x, y, metadata = self.dataset[self.indices[idx]]
+  
+      if self.transform is not None:
+          im_tuple = (self.transform(x), aug(x, self.transform),
+                    aug(x, self.transform))
+      
+      return im_tuple, y, metadata
+
+import augmentations 
+
+def aug(image, transform):
+      """Perform AugMix augmentations and compute mixture.
+      Args:
+        image: PIL.Image input image
+        transform: Preprocessing function which should return a torch tensor.
+      Returns:
+        mixed: Augmented and mixed image.
+      """
+      mixture_width = 3
+      mixture_depth = 3
+      severity = 5
+
+      aug_list = augmentations.augmentations_all
+    
+      ws = np.float32(np.random.dirichlet([1] * mixture_width))
+      m = np.float32(np.random.beta(1, 1))
+    
+      mix = torch.zeros_like(transform(image))
+      for i in range(mixture_width):
+        image_aug = image.copy()
+        depth = mixture_depth if mixture_depth > 0 else np.random.randint(
+            1, 4)
+        for _ in range(depth):
+          op = np.random.choice(aug_list)
+          image_aug = op(image_aug, severity)
+        # Preprocessing commutes since all coefficients are convex
+        mix += ws[i] * transform(image_aug)
+    
+      mixed = (1 - m) * transform(image) + m * mix
+      return mixed
