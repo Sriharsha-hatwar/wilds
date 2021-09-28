@@ -3,6 +3,7 @@ from algorithms.ERM import ERM
 from algorithms.groupDRO import GroupDRO
 from algorithms.deepCORAL import DeepCORAL
 from algorithms.IRM import IRM
+from algorithms.augmix import AugMix
 from configs.supported import algo_log_metrics
 from losses import initialize_loss
 
@@ -66,6 +67,14 @@ def initialize_algorithm(config, datasets, train_grouper):
             n_train_steps=n_train_steps)
     elif config.algorithm == 'IRM':
         algorithm = IRM(
+            config=config,
+            d_out=d_out,
+            grouper=train_grouper,
+            loss=loss,
+            metric=metric,
+            n_train_steps=n_train_steps)
+    elif config.algorithm == 'AugMix':
+        algorithm = AugMix(
             config=config,
             d_out=d_out,
             grouper=train_grouper,

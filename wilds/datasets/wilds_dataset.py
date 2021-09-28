@@ -494,6 +494,13 @@ class AugMixWILDSSubset(WILDSSubset):
       self.dataset = dataset
       self.indices = indices
       self.transform = transform
+      inherited_attrs = ['_dataset_name', '_data_dir', '_collate',
+                           '_split_scheme', '_split_dict', '_split_names',
+                           '_y_size', '_n_classes',
+                           '_metadata_fields', '_metadata_map']
+      for attr_name in inherited_attrs:
+          if hasattr(dataset, attr_name):
+            setattr(self, attr_name, getattr(dataset, attr_name))
 
   
     def __getitem__(self, idx):

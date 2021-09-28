@@ -19,6 +19,9 @@ from transforms import initialize_transform
 from configs.utils import populate_defaults
 import configs.supported as supported
 
+# python examples/run_expt.py --dataset camelyon17 --algorithm AugMix --root_dir data --frac 0.1 --log_dir log_augmix_01
+
+
 import torch.multiprocessing
 
 def main():
@@ -184,11 +187,19 @@ def main():
         else:
             transform = eval_transform
             verbose = False
+        
         # Get subset
-        datasets[split]['dataset'] = full_dataset.get_subset(
+        if (config.algorithm == "AugMix") and (split=="train"):
+            datasets[split]['dataset'] = full_dataset.get_subset(
             split,
             frac=config.frac,
-            transform=transform)
+            transform=transform,
+            augmix=True)
+        else:
+            datasets[split]['dataset'] = full_dataset.get_subset(
+                split,
+                frac=config.frac,
+                transform=transform)
 
         if split == 'train':
             datasets[split]['loader'] = get_train_loader(
@@ -213,6 +224,7 @@ def main():
         datasets[split]['name'] = full_dataset.split_names[split]
         datasets[split]['verbose'] = verbose
 
+        
         # Loggers
         datasets[split]['eval_logger'] = BatchLogger(
             os.path.join(config.log_dir, f'{split}_eval.csv'), mode=mode, use_wandb=(config.use_wandb and verbose))
@@ -222,6 +234,7 @@ def main():
         if config.use_wandb:
             initialize_wandb(config)
 
+        # import pdb; pdb.set_trace()
     # Logging dataset info
     # Show class breakdown if feasible
     if config.no_group_logging and full_dataset.is_classification and full_dataset.y_size==1 and full_dataset.n_classes <= 10:
@@ -265,7 +278,7 @@ def main():
             epoch_offset=0
             best_val_metric=None
 
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         train(
             algorithm=algorithm,
             datasets=datasets,

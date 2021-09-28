@@ -111,6 +111,7 @@ class SingleModelAlgorithm(GroupAlgorithm):
         results = self.process_batch(batch)
         self._update(results)
         # log results
+        # import pdb; pdb.set_trace()
         self.update_log(results)
         return self.sanitize_dict(results)
 

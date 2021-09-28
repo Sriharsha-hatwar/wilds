@@ -15,7 +15,7 @@ import numpy as np
 from PIL import Image, ImageOps, ImageEnhance
 
 # ImageNet code should change this value
-IMAGE_SIZE = 32
+IMAGE_SIZE = 96
 
 
 def int_parameter(level, maxval):
@@ -147,107 +147,6 @@ augmentations_all = [
 
 
 
-def get_device():
-    if torch.cuda.is_available():
-        device = 'cuda:0'
-    else:
-        device = 'cpu'
-    return device
-device = get_device()
-
-def aug(image, transform):
-  """Perform AugMix augmentations and compute mixture.
-  Args:
-    image: PIL.Image input image
-    transform: Preprocessing function which should return a torch tensor.
-  Returns:
-    mixed: Augmented and mixed image.
-  """
-  mixture_width = 3
-  mixture_depth = 3
-  severity = 5
-  aug_list = augmentations.augmentations
-  # if args.all_ops:
-  aug_list = augmentations.augmentations_all
-
-  ws = np.float32(np.random.dirichlet([1] * mixture_width))
-  m = np.float32(np.random.beta(1, 1))
-
-  mix = torch.zeros_like(transform(image))
-  for i in range(mixture_width):
-    image_aug = image.copy()
-    depth = mixture_depth if mixture_depth > 0 else np.random.randint(
-        1, 4)
-    for _ in range(depth):
-      op = np.random.choice(aug_list)
-      image_aug = op(image_aug, severity)
-    # Preprocessing commutes since all coefficients are convex
-    mix += ws[i] * transform(image_aug)
-
-  mixed = (1 - m) * transform(image) + m * mix
-  return mixed
-
-
-class AugMixDataset(torch.utils.data.Dataset):
-  """Dataset wrapper to perform AugMix augmentation."""
-
-  def __init__(self, dataset, transform, no_jsd=False):
-    self.dataset = dataset
-    self.transform = transform
-    self.no_jsd = no_jsd
-
-  def __getitem__(self, i):
-    x, y = self.dataset[i]
-    if self.no_jsd:
-      return aug(x, self.transform), y
-    else:
-      im_tuple = (self.transform(x), aug(x, self.transform),
-                  aug(x, self.transform))
-      return im_tuple, y
-
-  def __len__(self):
-    return len(self.dataset)
-
-def train_augmix(net, train_loader, optimizer, scheduler, no_jsd):
-  """Train for one epoch."""
-  net.train()
-  loss_ema = 0.
-  for i, (images, targets) in enumerate(train_loader):
-    optimizer.zero_grad()
-    if no_jsd:
-      images = images.to(device)
-      targets = targets.to(device)
-      logits = net(images)
-      loss = F.cross_entropy(logits, targets)
-    else:
-      images_all = torch.cat(images, 0).to(device)
-      targets = targets.to(device)
-      logits_all = net(images_all)
-      logits_clean, logits_aug1, logits_aug2 = torch.split(
-          logits_all, images[0].size(0))
-
-      # Cross-entropy is only computed on clean images
-      loss = F.cross_entropy(logits_clean, targets)
-
-      p_clean, p_aug1, p_aug2 = F.softmax(
-          logits_clean, dim=1), F.softmax(
-              logits_aug1, dim=1), F.softmax(
-                  logits_aug2, dim=1)
-
-      # Clamp mixture distribution to avoid exploding KL divergence
-      p_mixture = torch.clamp((p_clean + p_aug1 + p_aug2) / 3., 1e-7, 1).log()
-      loss += 12 * (F.kl_div(p_mixture, p_clean, reduction='batchmean') +
-                    F.kl_div(p_mixture, p_aug1, reduction='batchmean') +
-                    F.kl_div(p_mixture, p_aug2, reduction='batchmean')) / 3.
-
-    loss.backward()
-    optimizer.step()
-    scheduler.step()
-    loss_ema = loss_ema * 0.9 + float(loss) * 0.1
-    # if i % args.print_freq == 0:
-    # print('Train Loss {:.3f}'.format(loss_ema))
-
-  return loss_ema
 
 
 import torch
@@ -270,21 +169,27 @@ class AugMix(SingleModelAlgorithm):
         )
 
     def objective(self, results):
-        logits_clean, logits_aug1, logits_aug2 = torch.split(
-            results['y_pred'], results['y_true'].size(0)) 
-        
-        loss = self.loss.compute(results['y_pred'], results['y_true'], return_dict=False)
-        
-        p_clean, p_aug1, p_aug2 = F.softmax(
-          logits_clean, dim=1), F.softmax(
-              logits_aug1, dim=1), F.softmax(
-                  logits_aug2, dim=1)
-
-        # Clamp mixture distribution to avoid exploding KL divergence
-        p_mixture = torch.clamp((p_clean + p_aug1 + p_aug2) / 3., 1e-7, 1).log()
-        loss += 12 * (F.kl_div(p_mixture, p_clean, reduction='batchmean') +
-                      F.kl_div(p_mixture, p_aug1, reduction='batchmean') +
-                      F.kl_div(p_mixture, p_aug2, reduction='batchmean')) / 3.
+        # In case we are in training mode i.e the data loader output tuples
+        if results['y_pred'].size(0) != results['y_true'].size(0):
+            logits_clean, logits_aug1, logits_aug2 = torch.split(
+                results['y_pred'], results['y_true'].size(0)) 
+            # import pdb; pdb.set_trace()
+            results['y_pred'] = logits_clean
+            
+            loss = self.loss.compute(results['y_pred'], results['y_true'], return_dict=False)
+            
+            p_clean, p_aug1, p_aug2 = F.softmax(
+              logits_clean, dim=1), F.softmax(
+                  logits_aug1, dim=1), F.softmax(
+                      logits_aug2, dim=1)
+    
+            # Clamp mixture distribution to avoid exploding KL divergence
+            p_mixture = torch.clamp((p_clean + p_aug1 + p_aug2) / 3., 1e-7, 1).log()
+            loss += 12 * (F.kl_div(p_mixture, p_clean, reduction='batchmean') +
+                          F.kl_div(p_mixture, p_aug1, reduction='batchmean') +
+                          F.kl_div(p_mixture, p_aug2, reduction='batchmean')) / 3.
+        else:
+            loss = self.loss.compute(results['y_pred'], results['y_true'], return_dict=False)
         return loss
     
     def process_batch(self, batch):
@@ -304,8 +209,13 @@ class AugMix(SingleModelAlgorithm):
         x = move_to(x, self.device)
         y_true = move_to(y_true, self.device)
         g = move_to(self.grouper.metadata_to_group(metadata), self.device)
-        
-        x_all = torch.cat(x, 0)
+        # Here we concatenate only if we are in training mode. We do this here because, we don't have the information
+        # about the training or validation mode within the AugMix algorithm
+        # import pdb; pdb.set_trace()
+        if isinstance(x, list):
+            x_all = torch.cat(x, 0)
+        else:
+            x_all = x
 
         if self.model.needs_y:
             if self.training:
@@ -322,6 +232,5 @@ class AugMix(SingleModelAlgorithm):
             'metadata': metadata,
             }
         return results
-                      
-            
-
+    
+    
