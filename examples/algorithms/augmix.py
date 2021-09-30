@@ -185,9 +185,12 @@ class AugMix(SingleModelAlgorithm):
     
             # Clamp mixture distribution to avoid exploding KL divergence
             p_mixture = torch.clamp((p_clean + p_aug1 + p_aug2) / 3., 1e-7, 1).log()
-            loss += 12 * (F.kl_div(p_mixture, p_clean, reduction='batchmean') +
+            js_div = 12 * (F.kl_div(p_mixture, p_clean, reduction='batchmean') +
                           F.kl_div(p_mixture, p_aug1, reduction='batchmean') +
                           F.kl_div(p_mixture, p_aug2, reduction='batchmean')) / 3.
+            loss += js_div
+            if torch.isnan(loss):
+                import pdb; pdb.set_trace()
         else:
             loss = self.loss.compute(results['y_pred'], results['y_true'], return_dict=False)
         return loss
@@ -224,6 +227,9 @@ class AugMix(SingleModelAlgorithm):
                 outputs = self.model(x_all, None)
         else:
             outputs = self.model(x_all)
+        
+        if torch.isnan(outputs).sum() >= 1:
+            import pdb; pdb.set_trace()
             
         results = {
             'g': g,

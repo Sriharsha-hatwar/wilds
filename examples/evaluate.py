@@ -13,7 +13,7 @@ from wilds import benchmark_datasets
 from wilds import get_dataset
 from wilds.datasets.wilds_dataset import WILDSDataset, WILDSSubset
 
-
+# python examples/evaluate.py log_augmix_01 augmix_01_output --root-dir data
 """
 Evaluate predictions for WILDS datasets.
 

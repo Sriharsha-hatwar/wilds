@@ -38,6 +38,7 @@ class GroupAlgorithm(Algorithm):
             - results (dictionary)
         """
         results = self.sanitize_dict(results, to_out_device=False)
+   
         # check all the fields exist
         for field in self.logged_fields:
             assert field in results, f"field {field} missing"

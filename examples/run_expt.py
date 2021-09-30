@@ -161,6 +161,7 @@ def main():
     # To modify data augmentation, modify the following code block.
     # If you want to use transforms that modify both `x` and `y`,
     # set `do_transform_y` to True when initializing the `WILDSSubset` below.
+    # import pdb; pdb.set_trace()
     train_transform = initialize_transform(
         transform_name=config.transform,
         config=config,
