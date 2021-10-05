@@ -219,7 +219,7 @@ def main():
                 grouper=train_grouper,
                 batch_size=config.batch_size,
                 **config.loader_kwargs)
-
+            
         # Set fields
         datasets[split]['split'] = split
         datasets[split]['name'] = full_dataset.split_names[split]
@@ -235,7 +235,7 @@ def main():
         if config.use_wandb:
             initialize_wandb(config)
 
-        # import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
     # Logging dataset info
     # Show class breakdown if feasible
     if config.no_group_logging and full_dataset.is_classification and full_dataset.y_size==1 and full_dataset.n_classes <= 10:
@@ -289,9 +289,9 @@ def main():
             best_val_metric=best_val_metric)
     else:
         if config.eval_epoch is None:
-            eval_model_path = model_prefix + 'epoch:best_model.pth'
+            eval_model_path = model_prefix + 'epoch꞉best_model.pth'
         else:
-            eval_model_path = model_prefix +  f'epoch:{config.eval_epoch}_model.pth'
+            eval_model_path = model_prefix +  f'epoch꞉{config.eval_epoch}_model.pth'
         best_epoch, best_val_metric = load(algorithm, eval_model_path)
         if config.eval_epoch is None:
             epoch = best_epoch

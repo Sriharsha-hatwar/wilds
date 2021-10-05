@@ -13,7 +13,7 @@ from wilds import benchmark_datasets
 from wilds import get_dataset
 from wilds.datasets.wilds_dataset import WILDSDataset, WILDSSubset
 
-# python examples/evaluate.py log_augmix_01 augmix_01_output --root-dir data
+# python examples/evaluate.py log_augmix_015 augmix_015_output --root-dir data --dataset camelyon17
 """
 Evaluate predictions for WILDS datasets.
 
@@ -67,7 +67,7 @@ def evaluate_benchmark(
 
     def get_replicates(dataset_name: str) -> List[str]:
         if dataset_name == "poverty":
-            return [f"fold:{fold}" for fold in ["A", "B", "C", "D", "E"]]
+            return [f"fold꞉{fold}" for fold in ["A", "B", "C", "D", "E"]]
         else:
             if dataset_name == "camelyon17":
                 seeds = range(0, 10)
@@ -75,12 +75,13 @@ def evaluate_benchmark(
                 seeds = range(0, 5)
             else:
                 seeds = range(0, 3)
-            return [f"seed:{seed}" for seed in seeds]
+            return [f"seed꞉{seed}" for seed in seeds]
 
     def get_prediction_file(
         predictions_dir: str, dataset_name: str, split: str, replicate: str
     ) -> str:
-        run_id = f"{dataset_name}_split:{split}_{replicate}"
+        run_id = f"{dataset_name}_split꞉{split}_{replicate}"
+        # import pdb; pdb.set_trace()
         for file in os.listdir(predictions_dir):
             if file.startswith(run_id) and (
                 file.endswith(".csv") or file.endswith(".pth")
@@ -125,7 +126,7 @@ def evaluate_benchmark(
     replicates_results: Dict[str, Dict[str, List[float]]] = dict()
     replicates: List[str] = get_replicates(dataset_name)
     metrics: List[str] = get_metrics(dataset_name)
-
+    # import pdb; pdb.set_trace()
     # Store the results for each replicate
     for split in splits:
         replicates_results[split] = {}

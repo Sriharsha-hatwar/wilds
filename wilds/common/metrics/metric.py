@@ -111,6 +111,7 @@ class Metric:
         Output (return_dict=True):
             - results (dict): Dictionary of results
         """
+        # import pdb; pdb.set_trace()
         group_metrics, group_counts, worst_group_metric = self._compute_group_wise(y_pred, y_true, g, n_groups)
         if return_dict:
             results = {}

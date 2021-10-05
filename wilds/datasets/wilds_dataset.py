@@ -513,7 +513,8 @@ class AugMixWILDSSubset(WILDSSubset):
       return im_tuple, y, metadata
 
 from wilds.datasets import augmentations 
-
+import PIL
+import torchvision
 def aug(image, transform):
       """Perform AugMix augmentations and compute mixture.
       Args:
@@ -524,8 +525,9 @@ def aug(image, transform):
       """
       mixture_width = 3
       mixture_depth = 3
-      severity = 5
-
+      severity = np.random.randint(1,6)
+      
+      # import pdb; pdb.set_trace()
       aug_list = augmentations.augmentations_all
     
       ws = np.float32(np.random.dirichlet([1] * mixture_width))
@@ -536,11 +538,25 @@ def aug(image, transform):
         image_aug = image.copy()
         depth = mixture_depth if mixture_depth > 0 else np.random.randint(
             1, 4)
-        for _ in range(depth):
-          op = np.random.choice(aug_list)
-          image_aug = op(image_aug, severity)
+        # this way every operation in the composition is different
+        operations = np.random.choice(aug_list, size=depth, replace=False)        
+        for i in range(depth):
+          op = operations[i] 
+          # print("aug: {}".format(op.__name__))
+          # import pdb; pdb.set_trace()          
+          # We do this because we use augmentation on PIL images and on tensor image as well
+          if isinstance(image_aug, PIL.Image.Image) and (op in augmentations.augmentations_kornia):
+              image_aug = op(transform(image_aug), severity)
+          elif isinstance(image_aug, torch.Tensor) and (op in augmentations.augmentations_pil):
+              image_aug = op(torchvision.transforms.functional.to_pil_image(image_aug), severity)
+          else:
+              image_aug = op(image_aug, severity)
         # Preprocessing commutes since all coefficients are convex
-        mix += ws[i] * transform(image_aug)
+        # if the image is already a tensor then trying to transform it will cause an error, hence the if-else
+        if isinstance(image_aug, torch.Tensor):
+            mix += ws[i] * image_aug
+        else:
+            mix += ws[i] * transform(image_aug)
     
       mixed = (1 - m) * transform(image) + m * mix
       return mixed
