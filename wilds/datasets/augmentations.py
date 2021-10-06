@@ -11,7 +11,8 @@ import numpy as np
 from PIL import Image, ImageOps, ImageEnhance
 
 # ImageNet code should change this value
-IMAGE_SIZE = 96
+# IMAGE_SIZE = 96 # for camelyon17
+IMAGE_SIZE = 224 # for iwildcam
 
 
 def int_parameter(level, maxval):

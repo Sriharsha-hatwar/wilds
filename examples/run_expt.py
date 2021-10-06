@@ -19,8 +19,8 @@ from transforms import initialize_transform
 from configs.utils import populate_defaults
 import configs.supported as supported
 
-# python examples/run_expt.py --dataset camelyon17 --algorithm AugMix --root_dir data --frac 0.1 --log_dir log_augmix_01
-
+# python examples/run_expt.py --dataset camelyon17 --algorithm AugMix --root_dir data --frac 0.1 --log_dir log_augmix_01/camlyon17 --seed 0
+# git add -u
 
 import torch.multiprocessing
 
