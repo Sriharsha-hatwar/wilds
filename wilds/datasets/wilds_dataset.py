@@ -3,6 +3,9 @@ import time
 
 import torch
 import numpy as np
+from wilds.datasets.civilcomments_dataset import CivilCommentsDataset
+from wilds.datasets.amazon_dataset import AmazonDataset
+from wilds.datasets import augmentations_text
 
 class WILDSDataset:
     """
@@ -507,6 +510,10 @@ class AugMixWILDSSubset(WILDSSubset):
       x, y, metadata = self.dataset[self.indices[idx]]
   
       if self.transform is not None:
+        if isinstance(self.dataset, AmazonDataset) or isinstance(self.dataset, CivilCommentsDataset):
+          im_tuple = (self.transform(x), aug_text(x, self.transform),
+                    aug_text(x, self.transform))
+        else:
           im_tuple = (self.transform(x), aug(x, self.transform),
                     aug(x, self.transform))
       
@@ -560,3 +567,23 @@ def aug(image, transform):
     
       mixed = (1 - m) * transform(image) + m * mix
       return mixed
+
+def aug_text(text, transform):
+    """
+    Perform AugMix type of augmentation for text.
+
+    Args : 
+    text : A string, 
+    transform : usually will be the tokenizer algo as we are testing it against a transformer arch.
+
+    Returns : 
+    The input type required for feeding a transformer model?
+    """
+    mixture_width = 3
+    aug_list = augmentations_text.augmentations_all
+    augmentation_operations = np.random.choice(aug_list, size=mixture_width, replace=False)
+    augmented_text = text
+    for i in range(mixture_width):
+        augmented_text = augmentation_operations[i](augmented_text)
+    
+    return transform(aug_text)
