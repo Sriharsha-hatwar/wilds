@@ -16,6 +16,8 @@ import nlpaug.augmenter.char as nac
 import nlpaug.augmenter.word as naw
 import nlpaug.augmenter.sentence as nas
 import nltk
+nltk.download('averaged_perceptron_tagger')
+nltk.download('wordnet')
 
 model_dir = '/content/drive/MyDrive/OOD-data-robustness-in-NLP/data/'
 
