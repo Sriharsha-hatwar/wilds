@@ -489,7 +489,7 @@ class WILDSSubset(WILDSDataset):
 
 #from wilds.datasets.civilcomments_dataset import CivilCommentsDataset
 #from wilds.datasets.amazon_dataset import AmazonDataset
-#from wilds.datasets import augmentations_text
+from wilds.datasets import augmentations_text
 class AugMixWILDSSubset(WILDSSubset):
     """Dataset wrapper to perform AugMix augmentation."""
 
