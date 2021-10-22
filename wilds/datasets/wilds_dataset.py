@@ -3,9 +3,7 @@ import time
 
 import torch
 import numpy as np
-from wilds.datasets.civilcomments_dataset import CivilCommentsDataset
-from wilds.datasets.amazon_dataset import AmazonDataset
-from wilds.datasets import augmentations_text
+
 
 class WILDSDataset:
     """
@@ -489,7 +487,9 @@ class WILDSSubset(WILDSDataset):
     def eval(self, y_pred, y_true, metadata):
         return self.dataset.eval(y_pred, y_true, metadata)
 
-
+from wilds.datasets.civilcomments_dataset import CivilCommentsDataset
+from wilds.datasets.amazon_dataset import AmazonDataset
+from wilds.datasets import augmentations_text
 class AugMixWILDSSubset(WILDSSubset):
     """Dataset wrapper to perform AugMix augmentation."""
 
