@@ -487,9 +487,9 @@ class WILDSSubset(WILDSDataset):
     def eval(self, y_pred, y_true, metadata):
         return self.dataset.eval(y_pred, y_true, metadata)
 
-from wilds.datasets.civilcomments_dataset import CivilCommentsDataset
-from wilds.datasets.amazon_dataset import AmazonDataset
-from wilds.datasets import augmentations_text
+#from wilds.datasets.civilcomments_dataset import CivilCommentsDataset
+#from wilds.datasets.amazon_dataset import AmazonDataset
+#from wilds.datasets import augmentations_text
 class AugMixWILDSSubset(WILDSSubset):
     """Dataset wrapper to perform AugMix augmentation."""
 
@@ -510,9 +510,9 @@ class AugMixWILDSSubset(WILDSSubset):
       x, y, metadata = self.dataset[self.indices[idx]]
   
       if self.transform is not None:
-        if isinstance(self.dataset, AmazonDataset) or isinstance(self.dataset, CivilCommentsDataset):
+        if (type(x) == str):
           im_tuple = (self.transform(x), aug_text(x, self.transform),
-                    aug_text(x, self.transform))
+                    aug_text(x, self.transform)) 
         else:
           im_tuple = (self.transform(x), aug(x, self.transform),
                     aug(x, self.transform))
@@ -586,4 +586,4 @@ def aug_text(text, transform):
     for i in range(mixture_width):
         augmented_text = augmentation_operations[i](augmented_text)
     
-    return transform(aug_text)
+    return transform(augmented_text)
