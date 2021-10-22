@@ -34,6 +34,7 @@ def randomCharAug(given_text):
     augmented_text = aug.augment(given_text)
     return augmented_text
 #3
+"""
 def substitutedWord2Vec(given_text):
     # Can do it later.
     aug = naw.WordEmbsAug(
@@ -48,7 +49,7 @@ def tfIdfinsert(given_text):
         action="insert")
     augmented_text = aug.augment(given_text)
     return augmented_text
-"""
+
 def contextualAugmenterInsert(give_text):
     aug = naw.ContextualWordEmbsAug(
         model_path='bert-base-uncased', action="insert")
@@ -77,7 +78,7 @@ def delWordRandomAugmenter(given_text):
     augmented_text = aug.augment(given_text)
     return augmented_text
 
-augmentations_all = [simulateKeyBoardAug, randomCharAug, substitutedWord2Vec, tfIdfinsert, delWordRandomAugmenter, randomWordAugmenter, synonymAugmenter]
+augmentations_all = [simulateKeyBoardAug, randomCharAug, delWordRandomAugmenter, randomWordAugmenter, synonymAugmenter]
 
 if __name__ == '__main__':
     nltk.download('averaged_perceptron_tagger')
