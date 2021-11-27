@@ -312,7 +312,7 @@ augmentations_pil = [
 
 augmentations_kornia = [
     gaussian_noise, spatter, canny, gaussian_blur,
-    motion_blur, box_blur, laplacian, fog, channel_shuffle, invert,
+    motion_blur, box_blur, laplacian, channel_shuffle, invert,
     grey_scale, sobel, impulse_noise
 ]
 
